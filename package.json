@@ -1,0 +1,23 @@
+{
+  "name": "dartmouthprojectpreservation-repo",
+  "version": "1.0.0",
+  "description": "For client \"Dartmouth Project Preservation\". This application manages the structure, remodeling, and import of mass content of cemeteries > sections > graves.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HurricaneDevelopmentLLC/DartmouthProjectPreservation.git"
+  },
+  "author": "Hurricane Development LLC",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HurricaneDevelopmentLLC/DartmouthProjectPreservation/issues"
+  },
+  "homepage": "https://github.com/HurricaneDevelopmentLLC/DartmouthProjectPreservation#readme",
+  "dependencies": {
+    "bluebird": "^3.5.0",
+    "xml2js": "^0.4.17"
+  }
+}
