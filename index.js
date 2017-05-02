@@ -5,7 +5,11 @@ var XMLManager = require('./XMLManager.js');
 const cemeteries = {
 	'ioannina': {
 		'year': '2016',
-		'regmatch': /^ioan/
+		'regmatch': /^ioan/,
+		'sections': {
+			'quad': /^[a-z]$/,
+			'row': /^[a-b]$/
+		}
 	},
 	'lutowiska': {
 		'year': '2014',
