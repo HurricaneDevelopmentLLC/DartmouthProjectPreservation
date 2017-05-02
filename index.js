@@ -29,7 +29,8 @@ const staticPages = [
 	'support',
 	'contact',
 	'home',
-	'about'
+	'about',
+	'support-us'
 ];
 
 var matchCemetery = (name) => {
