@@ -6,10 +6,12 @@ const cemeteries = {
 	'ioannina': {
 		'year': '2016',
 		'regmatch': /^ioan/,
-		'sections': {
-			'quad': /^[a-z]$/,
-			'row': /^[a-b]$/
-		}
+		'sections': [
+			{
+				'quad': /^[a-z]$/,
+				'row': /^[a-z]$/
+			}
+		]
 	},
 	'lutowiska': {
 		'year': '2014',
@@ -21,7 +23,16 @@ const cemeteries = {
 	},
 	'yurburg': {
 		'year': '2007',
-		'regmatch': /^yurburg/
+		'regmatch': /^yurburg/,
+		'sections': [
+			{
+				'section': /^[a-z]$/,
+				'row': /^\d+$/
+			},
+			{
+				'section': /^[a-z]$/
+			}
+		]
 	},
 	'sosnitsa': {
 		'year': '2009',
@@ -29,7 +40,7 @@ const cemeteries = {
 	}
 };
 
-const staticPages = [
+const globalStaticPages = [
 	'support',
 	'contact',
 	'home',
@@ -46,6 +57,25 @@ var matchCemetery = (name) => {
 
 	return null;
 };
+
+var matchSection = (cemetery, arrName) => {
+	if (typeof cemeteries[cemetery].sections === 'undefined' || cemeteries[cemetery].sections.length < 1)
+		return [];
+
+	for (var s = 0;s < cemeteries[cemetery].sections.length;s++) {
+		var groups = [];
+
+		for (var i = 0;i < arrName.length / 2;i++) {
+			if (typeof cemeteries[cemetery].sections[s][arrName[2 * i]] !== 'undefined' && cemeteries[cemetery].sections[s][arrName[2 * i]].test(arrName[2 * i + 1]))
+				groups.push(arrName[2 * i + 1]);
+		}
+
+		if (groups.length == Object.keys(cemeteries[cemetery].sections[s]).length)
+			return groups
+	}
+
+	return [];
+}
 
 function DumpObjectIndented(uO, indent, max, depth) {
 	const obj = {};
@@ -111,9 +141,24 @@ XMLManager.ImportXML().then((jsonData) => {
 			cPages++;
 			continue;
 		// Capture Static Pages
-		} else if (staticPages.indexOf(pagesRaw[i]['wp:post_name'][0]) > -1) {
+		} else if (globalStaticPages.indexOf(pagesRaw[i]['wp:post_name'][0]) > -1) {
 			cPages++;
 			continue;
+		// Capture Cemetery Items
+		} else if (cemetery !== null) {
+			// Capture Cemetery Landing Pages
+			if (arrName.length == 2 && cemeteries[cemetery]['year'] == arrName[1]) {
+				cPages++;
+				continue;
+			}
+
+			var sectionGroups = matchSection(cemetery,arrName.slice(1));
+
+			// Capture Cemetery Section Pages
+			if (sectionGroups.length != 0 && sectionGroups.length == arrName.slice(1).length / 2) {
+				cPages++;
+				continue;
+			}
 		// Capture all that don't start with a cemetery. Add to 'Uncaptured' list.
 		} else if (cemetery === null) {
 			uncaptured[pagesRaw[i]['wp:post_name'][0]] = pagesRaw[i]['title'][0];
