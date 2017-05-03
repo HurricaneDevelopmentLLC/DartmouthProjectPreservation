@@ -19,7 +19,15 @@ const cemeteries = {
 	},
 	'korczyna': {
 		'year': '2012',
-		'regmatch': /^korc/
+		'regmatch': /^korc/,
+		'sections': [
+			{
+				'row': /^[a-z]$/
+			}
+		],
+		'statics': [
+			'korczyna-row-tables'
+		]
 	},
 	'yurburg': {
 		'year': '2007',
@@ -32,11 +40,51 @@ const cemeteries = {
 			{
 				'section': /^[a-z]$/
 			}
+			,
+			{
+				'adj': /^\d+$/
+			}
+		],
+		'statics': [
+			'yurburg-adjacent-cemetery',
+			'yurburg-maps',
+			'yurburg-maps-a-b-c-d',
+			'yurburg-maps-e-f',
+			'yurburg-maps-g-h',
+			'yurburg-photos'
 		]
 	},
 	'sosnitsa': {
 		'year': '2009',
 		'regmatch': /^sosn/
+	},
+	'prishtina': {
+		'year': '2011',
+		'regmatch': /^prishtina/
+	},
+	'sanok': {
+		'year': '2010',
+		'regmatch': /^sanok/
+	},
+	'druzhkapol': {
+		'year': '2006',
+		'regmatch': /^druzhkapol/
+	},
+	'lunna': {
+		'year': '2005',
+		'regmatch': /^lunna/
+	},
+	'kamenka': {
+		'year': '2004',
+		'regmatch': /^kamenka/
+	},
+	'indura': {
+		'year': '2003',
+		'regmatch': /^indura/
+	},
+	'sopotskin': {
+		'year': '2002',
+		'regmatch': /^sopotskin/
 	}
 };
 
@@ -45,7 +93,8 @@ const globalStaticPages = [
 	'contact',
 	'home',
 	'about',
-	'support-us'
+	'support-us',
+	'our-journey'
 ];
 
 var matchCemetery = (name) => {
@@ -77,7 +126,81 @@ var matchSection = (cemetery, arrName) => {
 	return [];
 }
 
-function DumpObjectIndented(uO, indent, max, depth) {
+XMLManager.ImportXML().then((jsonData) => {
+	var pagesRaw = jsonData.rss.channel[0].item;
+	var numPages = pagesRaw.length;
+
+	var uncaptured = [];
+
+	var cPages = 0;
+
+	var pages = {};
+
+	for (var i = pagesRaw.length - 1; i >= 0; i--) {
+		var name = pagesRaw[i]['wp:post_name'][0];
+		var arrName = name;
+		arrName = arrName.split('-');
+
+		var cemetery = matchCemetery(arrName[0]);
+
+		 // Capture Squarespace Static URLS
+		if (typeof pagesRaw[i]['wp:attachment_url'] !== 'undefined' && /^http:\/\/static1\.squarespace\.com\/static\//.test(pagesRaw[i]['wp:attachment_url'])) {
+			cPages++;
+			continue;
+		// Capture Static Pages
+		} else if (globalStaticPages.indexOf(name) > -1) {
+			cPages++;
+			continue;
+		// Capture Cemetery Items
+		} else if (cemetery !== null) {
+			// Capture Cemetery Landing Pages
+			if (arrName.length == 2 && cemeteries[cemetery]['year'] == arrName[1]) {
+				cPages++;
+				continue;
+			}
+
+			var sectionGroups = matchSection(cemetery,arrName.slice(1));
+
+			// Capture Cemetery Section Pages
+			if (sectionGroups.length != 0 && sectionGroups.length == arrName.slice(1).length / 2) {
+				cPages++;
+				continue;
+			}
+
+			// Capture Cemetery Specific Static Pages
+			if (typeof cemeteries[cemetery].statics !== 'undefined' && cemeteries[cemetery].statics.indexOf(name) > -1) {
+				cPages++;
+				continue;
+			}
+
+		// Capture all that don't start with a cemetery. Add to 'Uncaptured' list.
+		} else if (cemetery === null) {
+			uncaptured[name] = pagesRaw[i]['title'][0];
+			continue;
+		}
+		
+		var nuid = arrName[1].split('');
+
+		if (isNaN(nuid[0]) && !isNaN(nuid[1])) {
+			cPages++;
+			if (typeof pages[cemetery] === 'undefined')
+				pages[cemetery] = {};
+			if (typeof pages[cemetery][nuid[0]] === 'undefined')
+				pages[cemetery][nuid[0]] = {};
+			pages[cemetery][nuid[0]][arrName[1].substring(1)] = pagesRaw[i]['content:encoded'];
+		} else {
+			uncaptured[name] = pagesRaw[i]['title'][0];
+		}
+	}
+
+	console.log(DumpObjectIndented(pages, "  ",2));
+
+	console.log(DumpObjectIndented(uncaptured,"  "));
+
+	console.log(cPages + " : " + (cPages + Object.keys(uncaptured).length) + " : " + numPages);
+});
+
+var DumpObjectIndented = (uO, indent, max, depth) => {
 	const obj = {};
 	Object.keys(uO).sort().forEach(function(key) {
 	  obj[key] = uO[key];
@@ -119,70 +242,3 @@ function DumpObjectIndented(uO, indent, max, depth) {
 
 	return result.replace(/,\n$/, "");
 }
-
-XMLManager.ImportXML().then((jsonData) => {
-	var pagesRaw = jsonData.rss.channel[0].item;
-	var numPages = pagesRaw.length;
-
-	var uncaptured = [];
-
-	var cPages = 0;
-
-	var pages = {};
-
-	for (var i = pagesRaw.length - 1; i >= 0; i--) {
-		var arrName = pagesRaw[i]['wp:post_name'][0];
-		arrName = arrName.split('-');
-
-		var cemetery = matchCemetery(arrName[0]);
-
-		 // Capture Squarespace Static URLS
-		if (typeof pagesRaw[i]['wp:attachment_url'] !== 'undefined' && /^http:\/\/static1\.squarespace\.com\/static\//.test(pagesRaw[i]['wp:attachment_url'])) {
-			cPages++;
-			continue;
-		// Capture Static Pages
-		} else if (globalStaticPages.indexOf(pagesRaw[i]['wp:post_name'][0]) > -1) {
-			cPages++;
-			continue;
-		// Capture Cemetery Items
-		} else if (cemetery !== null) {
-			// Capture Cemetery Landing Pages
-			if (arrName.length == 2 && cemeteries[cemetery]['year'] == arrName[1]) {
-				cPages++;
-				continue;
-			}
-
-			var sectionGroups = matchSection(cemetery,arrName.slice(1));
-
-			// Capture Cemetery Section Pages
-			if (sectionGroups.length != 0 && sectionGroups.length == arrName.slice(1).length / 2) {
-				cPages++;
-				continue;
-			}
-		// Capture all that don't start with a cemetery. Add to 'Uncaptured' list.
-		} else if (cemetery === null) {
-			uncaptured[pagesRaw[i]['wp:post_name'][0]] = pagesRaw[i]['title'][0];
-			continue;
-		}
-		
-		var nuid = arrName[1].split('');
-
-		if (isNaN(nuid[0]) && !isNaN(nuid[1])) {
-			cPages++;
-			if (typeof pages[cemetery] === 'undefined')
-				pages[cemetery] = {};
-			if (typeof pages[cemetery][nuid[0]] === 'undefined')
-				pages[cemetery][nuid[0]] = {};
-			pages[cemetery][nuid[0]][arrName[1].substring(1)] = pagesRaw[i]['content:encoded'];
-		} else {
-			uncaptured[pagesRaw[i]['wp:post_name'][0]] = pagesRaw[i]['title'][0];
-		}
-	}
-
-	console.log(DumpObjectIndented(pages, "  ",2));
-
-	console.log(DumpObjectIndented(uncaptured,"  "));
-
-	console.log(cPages + " : " + (cPages + Object.keys(uncaptured).length) + " : " + numPages);
-});
-
