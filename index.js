@@ -26,7 +26,8 @@ const cemeteries = {
 			}
 		],
 		'statics': [
-			'korczyna-row-tables'
+			'korczyna-row-tables',
+			'korczyna-media'
 		]
 	},
 	'yurburg': {
@@ -85,6 +86,10 @@ const cemeteries = {
 	'sopotskin': {
 		'year': '2002',
 		'regmatch': /^sopotskin/
+	},
+	'ustryzyki': {
+		'year': '2013',
+		'regmatch': /^ustryzyki/
 	}
 };
 
