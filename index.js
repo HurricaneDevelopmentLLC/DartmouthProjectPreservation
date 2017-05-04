@@ -131,6 +131,17 @@ var matchSection = (cemetery, arrName) => {
 	return [];
 }
 
+var nameFromArray = (arr) => {
+	var name ='';
+
+	for (var comp in arr)
+		if (comp !== '')
+			name += comp;
+
+	return name.substring(0,name.length - 1);
+}
+
+
 XMLManager.ImportXML().then((jsonData) => {
 	var pagesRaw = jsonData.rss.channel[0].item;
 	var numPages = pagesRaw.length;
@@ -183,24 +194,64 @@ XMLManager.ImportXML().then((jsonData) => {
 			uncaptured[name] = pagesRaw[i]['title'][0];
 			continue;
 		}
-		
-		var nuid = arrName[1].split('');
 
-		if (isNaN(nuid[0]) && !isNaN(nuid[1])) {
-			cPages++;
-			if (typeof pages[cemetery] === 'undefined')
-				pages[cemetery] = {};
-			if (typeof pages[cemetery][nuid[0]] === 'undefined')
-				pages[cemetery][nuid[0]] = {};
-			pages[cemetery][nuid[0]][arrName[1].substring(1)] = pagesRaw[i]['content:encoded'];
-		} else {
-			uncaptured[name] = pagesRaw[i]['title'][0];
+		cPages++;
+		if (typeof pages[cemetery] === 'undefined')
+			pages[cemetery] = {};
+
+		/* Manage specific cemeteries */
+		// Manage Ioannina
+		if (cemetery === 'ioannina') {
+			if (/^[a-z]+/.test(arrName[1])) {
+				var matches = arrName[1].match(/^([a-z]+)(\d+)$/) || [];
+				if (typeof pages[cemetery]['quad'] === 'undefined')
+					pages[cemetery]['quad'] = {};
+				if (typeof pages[cemetery]['quad']['a'] === 'undefined')
+					pages[cemetery]['quad']['a'] = {};
+				if (typeof pages[cemetery]['quad']['a']['row'] === 'undefined')
+					pages[cemetery]['quad']['a']['row'] = {};
+				if (typeof pages[cemetery]['quad']['a']['row'][matches[1]] === 'undefined')
+					pages[cemetery]['quad']['a']['row'][matches[1]] = {};
+				pages[cemetery]['quad']['a']['row'][matches[1]][matches[2]] = arrName[2] || '';
+			} else {
+				uncaptured.push(name);
+			}
+		// Manage Korczyna
+		} else if (cemetery == 'korczyna') {
+			if (/^[a-z]+\d+[a-z]?$/.test(arrName[1])) {
+				var matches = arrName[1].match(/^([a-z]+)(\d+[a-z]?)$/) || [];
+				if (typeof pages[cemetery]['row'] === 'undefined')
+					pages[cemetery]['row'] = {};
+				if (typeof pages[cemetery]['row'][matches[1]] === 'undefined')
+					pages[cemetery]['row'][matches[1]] = [];
+				pages[cemetery]['row'][matches[1]].push(matches[2]);
+			} else {
+				uncaptured.push(name);
+			}
+		// Manage Yurburg
+		} else if (cemetery == 'yurburg') {
+			if (/^[a-z]+\d+[a-z]?$/.test(arrName[1])) {
+				var matches = arrName[1].match(/^([a-z]+)(\d+[a-z]?)$/) || [];
+				var row = pagesRaw[i]['content:encoded'][0].match(/>.*Row (\d*).*</) || [];
+				if (typeof pages[cemetery]['section'] === 'undefined')
+					pages[cemetery]['section'] = {};
+				if (typeof pages[cemetery]['section'][matches[1]] === 'undefined')
+					pages[cemetery]['section'][matches[1]] = {};
+				if (typeof pages[cemetery]['section'][matches[1]]['row'] === 'undefined')
+					pages[cemetery]['section'][matches[1]]['row'] = {};
+				if (typeof pages[cemetery]['section'][matches[1]]['row'][row[1]] === 'undefined')
+					pages[cemetery]['section'][matches[1]]['row'][row[1]] = [];
+				pages[cemetery]['section'][matches[1]]['row'][row[1]].push(matches[2]);
+			} else {
+				uncaptured.push(name);
+			}
 		}
 	}
 
-	console.log(DumpObjectIndented(pages, "  ",2));
+	console.log(DumpObjectIndented(pages, "  ",10));
 
-	console.log(DumpObjectIndented(uncaptured,"  "));
+	//console.log(DumpObjectIndented(uncaptured,"  "));
+	console.log("Uncaptured Items: ",uncaptured.length);
 
 	console.log(cPages + " : " + (cPages + Object.keys(uncaptured).length) + " : " + numPages);
 });
