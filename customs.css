@@ -1,0 +1,32 @@
+section#page div#section-header a {
+	display: block;
+	float: left;
+	width: 24%;
+	margin: 0px 1% 14px 0px;
+	padding: 0;
+}
+
+section#page div#section-header a img {
+	width: 100%;
+	transition: 1s;
+}
+
+section#page div#section-header a:hover img {
+	opacity: 0.6;
+}
+
+section#page div#section-header a div.caption {
+	text-align: center;
+	font-size: 13pt;
+	font-weight: 500;
+	margin: 4px 0px 0px 0;
+}
+
+div#section-pages {
+  clear: both;
+}
+
+div#section-pages div.page {
+  margin: 0 auto;
+  width: ;
+}
