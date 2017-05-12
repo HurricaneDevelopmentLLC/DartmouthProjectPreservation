@@ -1,6 +1,7 @@
 'use strict'
 var Promise = require('bluebird');
 var XMLManager = require('./XMLManager.js');
+var html = require('html');
 
 const cemeteries = {
 	'ioannina': {
@@ -102,6 +103,8 @@ const globalStaticPages = [
 	'our-journey'
 ];
 
+const simplePages = true;
+
 var matchCemetery = (name) => {
 	for (var cemetery in cemeteries) {
 		if (cemeteries[cemetery].regmatch.test(name)) {
@@ -145,6 +148,39 @@ var nameFromArray = (arr) => {
 XMLManager.ImportXML().then((jsonData) => {
 	var pagesRaw = jsonData.rss.channel[0].item;
 	var numPages = pagesRaw.length;
+
+	var getPageFromTitle = (name) => {
+		for (var i = pagesRaw.length - 1; i >= 0; i--) {
+			if (pagesRaw[i]['wp:post_name'] == name) {
+				return pagesRaw[i];
+			}
+		}
+	};
+
+	var generateNewHTMLContent = (obj) => {
+		for (var child in obj) {
+			if (typeof obj[child] === 'object') {
+				if (child === 'subpages') {
+					var secMasPg = getPageFromTitle(obj.sectionMasterPageName);
+					secMasPg = (typeof secMasPg === 'object') ? secMasPg['content:encoded'][0] : '';
+					secMasPg = secMasPg.replace(/\[caption( \w+=("|')\S*("|'))*\](<a.*>)(<img.*>)<\/a>(.*)\[\/caption\]/g,'$4$5<div class="caption">$6</div></a>');
+					secMasPg = secMasPg.replace(/<a href=('|")\/(.+)\1 ?>/g,'<a href=$1#$2$1>');
+
+					obj.newHTMLContent += '<div id="section-header">' + secMasPg + '</div><div id="section-pages">';
+
+					for (var page in obj.subpages) {
+						obj.newHTMLContent += "\n<!-- START PAGE " + page + " -->\n\n<div class='page' id='" + obj.subpages[page].pageid + "'>";
+						obj.newHTMLContent += getPageFromTitle(obj.subpages[page].pageid)['content:encoded'];
+						obj.newHTMLContent += "</div>\n\n<!-- STOP PAGE " + page + " -->";
+					}
+
+					obj.newHTMLContent += '</div>';
+				} else {
+					generateNewHTMLContent(obj[child]);
+				}
+			}
+		}
+	};
 
 	var uncaptured = [];
 
@@ -210,9 +246,24 @@ XMLManager.ImportXML().then((jsonData) => {
 					pages[cemetery]['quad']['a'] = {};
 				if (typeof pages[cemetery]['quad']['a']['row'] === 'undefined')
 					pages[cemetery]['quad']['a']['row'] = {};
-				if (typeof pages[cemetery]['quad']['a']['row'][matches[1]] === 'undefined')
-					pages[cemetery]['quad']['a']['row'][matches[1]] = {};
-				pages[cemetery]['quad']['a']['row'][matches[1]][matches[2]] = arrName[2] || '';
+				if (typeof pages[cemetery]['quad']['a']['row'][matches[1]] === 'undefined') {
+					if (!simplePages) {
+						pages[cemetery]['quad']['a']['row'][matches[1]] = {};
+						pages[cemetery]['quad']['a']['row'][matches[1]].subpages = {};
+						pages[cemetery]['quad']['a']['row'][matches[1]].newHTMLContent = '';
+						pages[cemetery]['quad']['a']['row'][matches[1]].sectionMasterPageName = 'ioannina-quad-a-row-' + matches[1];
+					} else {
+						pages[cemetery]['quad']['a']['row'][matches[1]] = [];
+					}
+				}
+
+				if (!simplePages)
+					pages[cemetery]['quad']['a']['row'][matches[1]].subpages[matches[2]] = {
+						aid: arrName[2] || '',
+						pageid: name
+					};
+				else
+					pages[cemetery]['quad']['a']['row'][matches[1]].push(matches[2]);
 			} else {
 				uncaptured.push(name);
 			}
@@ -222,9 +273,24 @@ XMLManager.ImportXML().then((jsonData) => {
 				var matches = arrName[1].match(/^([a-z]+)(\d+[a-z]?)$/) || [];
 				if (typeof pages[cemetery]['row'] === 'undefined')
 					pages[cemetery]['row'] = {};
-				if (typeof pages[cemetery]['row'][matches[1]] === 'undefined')
-					pages[cemetery]['row'][matches[1]] = [];
-				pages[cemetery]['row'][matches[1]].push(matches[2]);
+				if (typeof pages[cemetery]['row'][matches[1]] === 'undefined') {
+					if (!simplePages) {
+						pages[cemetery]['row'][matches[1]] = {};
+						pages[cemetery]['row'][matches[1]].subpages = {};
+						pages[cemetery]['row'][matches[1]].newHTMLContent = '';
+						pages[cemetery]['row'][matches[1]].sectionMasterPageName = 'korczyna-row-' + matches[1];
+					} else {
+						pages[cemetery]['row'][matches[1]] = [];
+					}
+				}
+
+				if (!simplePages)
+					pages[cemetery]['row'][matches[1]].subpages[matches[2]] = {
+						pageid: name
+					};
+				else
+					pages[cemetery]['row'][matches[1]].push(matches[2]);
+				
 			} else {
 				uncaptured.push(name);
 			}
@@ -239,21 +305,40 @@ XMLManager.ImportXML().then((jsonData) => {
 					pages[cemetery]['section'][matches[1]] = {};
 				if (typeof pages[cemetery]['section'][matches[1]]['row'] === 'undefined')
 					pages[cemetery]['section'][matches[1]]['row'] = {};
-				if (typeof pages[cemetery]['section'][matches[1]]['row'][row[1]] === 'undefined')
-					pages[cemetery]['section'][matches[1]]['row'][row[1]] = [];
-				pages[cemetery]['section'][matches[1]]['row'][row[1]].push(matches[2]);
+				if (typeof pages[cemetery]['section'][matches[1]]['row'][row[1]] === 'undefined') {
+					if (!simplePages) {
+						pages[cemetery]['section'][matches[1]]['row'][row[1]] = {};
+						pages[cemetery]['section'][matches[1]]['row'][row[1]].subpages = {};
+						pages[cemetery]['section'][matches[1]]['row'][row[1]].newHTMLContent = '';
+						pages[cemetery]['section'][matches[1]]['row'][row[1]].sectionMasterPageName = 'yurburg-section-' + matches[1] + '-row-' + row[1];
+					} else {
+						pages[cemetery]['section'][matches[1]]['row'][row[1]] = [];
+					}
+				}
+
+				if (!simplePages)
+					pages[cemetery]['section'][matches[1]]['row'][row[1]].subpages[matches[2]] = {
+						pageid: name
+					};
+				else
+					pages[cemetery]['section'][matches[1]]['row'][row[1]].push(matches[2]);
 			} else {
 				uncaptured.push(name);
 			}
 		}
 	}
 
-	console.log(DumpObjectIndented(pages, "  ",10));
+	//generateNewHTMLContent(pages);
+
+	//console.log(html.prettyPrint(pages.ioannina.quad.a.row.a.newHTMLContent));
+	console.log(DumpObjectIndented(pages, "  ",7));
+
+	//console.log(getPageFromTitle('ioannina-quad-a-row-a')['content:encoded'][0]);
 
 	//console.log(DumpObjectIndented(uncaptured,"  "));
-	console.log("Uncaptured Items: ",uncaptured.length);
+	//console.log("Uncaptured Items: ",uncaptured.length);
 
-	console.log(cPages + " : " + (cPages + Object.keys(uncaptured).length) + " : " + numPages);
+	//console.log(cPages + " : " + (cPages + Object.keys(uncaptured).length) + " : " + numPages);
 });
 
 var DumpObjectIndented = (uO, indent, max, depth) => {
