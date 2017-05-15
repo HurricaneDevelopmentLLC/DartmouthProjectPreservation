@@ -103,7 +103,7 @@ const globalStaticPages = [
 	'our-journey'
 ];
 
-const simplePages = true;
+const simplePages = false;
 
 var matchCemetery = (name) => {
 	for (var cemetery in cemeteries) {
@@ -144,7 +144,6 @@ var nameFromArray = (arr) => {
 	return name.substring(0,name.length - 1);
 }
 
-
 XMLManager.ImportXML().then((jsonData) => {
 	var pagesRaw = jsonData.rss.channel[0].item;
 	var numPages = pagesRaw.length;
@@ -163,13 +162,13 @@ XMLManager.ImportXML().then((jsonData) => {
 				if (child === 'subpages') {
 					var secMasPg = getPageFromTitle(obj.sectionMasterPageName);
 					secMasPg = (typeof secMasPg === 'object') ? secMasPg['content:encoded'][0] : '';
-					secMasPg = secMasPg.replace(/\[caption( \w+=("|')\S*("|'))*\](<a.*>)(<img.*>)<\/a>(.*)\[\/caption\]/g,'$4$5<div class="caption">$6</div></a>');
+					secMasPg = secMasPg.replace(/\[caption( \w+=("|')\S*("|'))*\](<a.*>)(<img.*>)<\/a>(.*)\[\/caption\]/g,'$4<div class="img">$5</div><div class="caption">$6</div></a>');
 					secMasPg = secMasPg.replace(/<a href=('|")\/(.+)\1 ?>/g,'<a href=$1#$2$1>');
 
 					obj.newHTMLContent += '<div id="section-header">' + secMasPg + '</div><div id="section-pages">';
 
 					for (var page in obj.subpages) {
-						obj.newHTMLContent += "\n<!-- START PAGE " + page + " -->\n\n<div class='page' id='" + obj.subpages[page].pageid + "'>";
+						obj.newHTMLContent += "\n<!-- START PAGE " + page + " -->\n\n<div class='seperator' id='" + obj.subpages[page].pageid + "'></div><div class='page'>";
 						obj.newHTMLContent += getPageFromTitle(obj.subpages[page].pageid)['content:encoded'];
 						obj.newHTMLContent += "</div>\n\n<!-- STOP PAGE " + page + " -->";
 					}
@@ -181,6 +180,43 @@ XMLManager.ImportXML().then((jsonData) => {
 			}
 		}
 	};
+
+
+	var generateXML = (objOriginal) => {
+		var generateXMLRecurs = (obj) => {
+			for (var child in obj) {
+				if (typeof obj[child] === 'object') {
+					if (child === 'subpages' && /korczyna-row-[a-d]/.test(obj.sectionMasterPageName)) {
+						var newName = "";
+						var arr = obj.sectionMasterPageName.split('-');
+						for (var i = 0; i < arr.length; i++)
+							newName += arr[i].substring(0, 1).toUpperCase() + arr[i].substring(1) + " ";
+						newName = newName.substring(0, newName.length - 1);
+						
+						importXML += "\t<item>\n";
+						importXML += "\t\t<link>/" + obj.sectionMasterPageName + "/</link>\n";
+						importXML += "\t\t<title>" + newName + "</title>\n";
+						importXML += "\t\t<content:encoded>\n";
+						importXML += "<![CDATA[" + obj.newHTMLContent + "]]>";
+						importXML += "\t\t</content:encoded>\n";
+						importXML += "\t\t<wp:post_name>" + obj.sectionMasterPageName + "</wp:post_name>\n";
+						importXML += "\t\t<wp:post_type>page</wp:post_type>\n";
+						importXML += "\t\t<wp:status>publish</wp:status>\n";
+						importXML += "\t</item>\n";
+					} else {
+						generateXMLRecurs(obj[child]);
+					}
+				}
+			}
+		}
+
+		var importXML = "";
+		importXML += '<?xml version="1.0" encoding="UTF-8"?><rss xmlns:excerpt="http://wordpress.org/export/1.2/excerpt/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wfw="http://wellformedweb.org/CommentAPI/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:wp="http://wordpress.org/export/1.2/"><channel>';
+		generateXMLRecurs(objOriginal);
+		importXML += "</channel></rss>";
+		return importXML;
+	}
+	
 
 	var uncaptured = [];
 
@@ -328,17 +364,10 @@ XMLManager.ImportXML().then((jsonData) => {
 		}
 	}
 
-	//generateNewHTMLContent(pages);
+	generateNewHTMLContent(pages);
+	console.log(generateXML(pages));
 
-	//console.log(html.prettyPrint(pages.ioannina.quad.a.row.a.newHTMLContent));
-	console.log(DumpObjectIndented(pages, "  ",7));
-
-	//console.log(getPageFromTitle('ioannina-quad-a-row-a')['content:encoded'][0]);
-
-	//console.log(DumpObjectIndented(uncaptured,"  "));
-	//console.log("Uncaptured Items: ",uncaptured.length);
-
-	//console.log(cPages + " : " + (cPages + Object.keys(uncaptured).length) + " : " + numPages);
+	//console.log(DumpObjectIndented(pages, "  ",7));
 });
 
 var DumpObjectIndented = (uO, indent, max, depth) => {
