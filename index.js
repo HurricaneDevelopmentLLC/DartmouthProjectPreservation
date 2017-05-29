@@ -165,6 +165,9 @@ XMLManager.ImportXML().then((jsonData) => {
 					secMasPg = secMasPg.replace(/\[caption( \w+=("|')\S*("|'))*\](<a.*>)(<img.*>)<\/a>(.*)\[\/caption\]/g,'$4<div class="img">$5</div><div class="caption">$6</div></a>');
 					secMasPg = secMasPg.replace(/<a href=('|")\/(.+)\1 ?>/g,'<a href=$1#$2$1>');
 
+					// No Images
+					
+
 					obj.newHTMLContent += '<div id="section-header">' + secMasPg + '</div><div id="section-pages">';
 
 					for (var page in obj.subpages) {
@@ -186,7 +189,7 @@ XMLManager.ImportXML().then((jsonData) => {
 		var generateXMLRecurs = (obj) => {
 			for (var child in obj) {
 				if (typeof obj[child] === 'object') {
-					if (child === 'subpages' && /korczyna-row-[a-d]/.test(obj.sectionMasterPageName)) {
+					if (child === 'subpages' && /korczyna-row-[e-h]/.test(obj.sectionMasterPageName)) {
 						var newName = "";
 						var arr = obj.sectionMasterPageName.split('-');
 						for (var i = 0; i < arr.length; i++)
