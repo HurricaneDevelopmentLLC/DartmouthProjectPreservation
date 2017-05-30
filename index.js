@@ -191,7 +191,7 @@ XMLManager.ImportXML().then((jsonData) => {
 			for (var child in obj) {
 				if (typeof obj[child] === 'object') {
 					
-					if (child === 'subpages' && /ioannina-quad-a-row-[fh]/.test(obj.sectionMasterPageName)) {
+					if (child === 'subpages' && /yurburg-section-[b]-row-[\d]*/.test(obj.sectionMasterPageName)) {
 						//console.log(obj.sectionMasterPageName);
 
 						var newName = "";
@@ -371,11 +371,14 @@ XMLManager.ImportXML().then((jsonData) => {
 		}
 	}
 
-	generateNewHTMLContent(pages);
-	//generateXML(pages);
-	console.log(generateXML(pages));
+	 generateNewHTMLContent(pages);
 
-	//console.log(DumpObjectIndented(pages, "  ",4));
+	if (false) {
+		generateXML(pages);
+		console.log(DumpObjectIndented(pages, "  ",5));
+	} else {
+		console.log(generateXML(pages));
+	}
 });
 
 var DumpObjectIndented = (uO, indent, max, depth) => {
