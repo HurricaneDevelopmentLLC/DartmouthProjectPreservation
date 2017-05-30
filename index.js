@@ -162,11 +162,12 @@ XMLManager.ImportXML().then((jsonData) => {
 				if (child === 'subpages') {
 					var secMasPg = getPageFromTitle(obj.sectionMasterPageName);
 					secMasPg = (typeof secMasPg === 'object') ? secMasPg['content:encoded'][0] : '';
-					secMasPg = secMasPg.replace(/\[caption( \w+=("|')\S*("|'))*\](<a.*>)(<img.*>)<\/a>(.*)\[\/caption\]/g,'$4<div class="img">$5</div><div class="caption">$6</div></a>');
-					secMasPg = secMasPg.replace(/<a href=('|")\/(.+)\1 ?>/g,'<a href=$1#$2$1>');
+					secMasPg = secMasPg.replace(/\[caption( \w+=("|')\S*("|'))*\](<a[\sa-zA-Z0-9="'\/\-]*>)(<img[\sa-zA-Z0-9="'\/\-\:\.\?\_,&+]*>)<\/a>([\sa-zA-Z0-9\.,&+]*)\[\/caption\]/g,'$4<div class="img">$5</div><div class="caption">$6</div></a>');
+					secMasPg = secMasPg.replace(/<a href=('|")\/([a-zA-Z0-9\-]+)\1 ?>/g,'<a href=$1#$2$1>');
 
 					// No Images
-					
+					secMasPg = secMasPg.replace(/<p class="text-align-center">(&nbsp;|<br>)?(<a href="#">[a-zA-Z0-9\s]+<\/a>)?(&nbsp;|<br>)?<\/p>/ig,'');
+					secMasPg = secMasPg.replace(/<p class="text-align-center">(<a href="#">&nbsp;<\/a>|<br>|&nbsp;)?<a href="(#korczyna-([a-zA-Z0-9]+))">[a-zA-Z0-9\s]+<\/a>(<a href="#">&nbsp;<\/a>|<br>)?(&nbsp;)?<\/p>/ig,'<a href="$2"><div class="noimg-item"><span class="noimg">No Image</span><span class="noimg-title">' + '$3'.toUpperCase() + '</span></div></a>');
 
 					obj.newHTMLContent += '<div id="section-header">' + secMasPg + '</div><div id="section-pages">';
 
@@ -189,7 +190,10 @@ XMLManager.ImportXML().then((jsonData) => {
 		var generateXMLRecurs = (obj) => {
 			for (var child in obj) {
 				if (typeof obj[child] === 'object') {
-					if (child === 'subpages' && /korczyna-row-[e-h]/.test(obj.sectionMasterPageName)) {
+					
+					if (child === 'subpages' && /ioannina-quad-a-row-[fh]/.test(obj.sectionMasterPageName)) {
+						//console.log(obj.sectionMasterPageName);
+
 						var newName = "";
 						var arr = obj.sectionMasterPageName.split('-');
 						for (var i = 0; i < arr.length; i++)
@@ -368,9 +372,10 @@ XMLManager.ImportXML().then((jsonData) => {
 	}
 
 	generateNewHTMLContent(pages);
+	//generateXML(pages);
 	console.log(generateXML(pages));
 
-	//console.log(DumpObjectIndented(pages, "  ",7));
+	//console.log(DumpObjectIndented(pages, "  ",4));
 });
 
 var DumpObjectIndented = (uO, indent, max, depth) => {

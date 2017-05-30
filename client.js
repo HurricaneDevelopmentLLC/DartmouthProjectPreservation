@@ -1,24 +1,29 @@
 var headerPagesList = document.getElementById('section-header').getElementsByTagName('a');
 var l = headerPagesList.length;
 
+
 var HurDevCFunc = () => {
 	for (var i = 0;i < l;i++) {
 	    var imgDiv = headerPagesList[i].getElementsByClassName('img')[0];
-	    if (typeof imgDiv === 'undefined')
-	    	continue;
+	    var spanNoIMG = headerPagesList[i].getElementsByClassName('noimg')[0];
 
-	    var img = imgDiv.getElementsByTagName('img')[0];
-	    //console.log(imgDiv);
+	    if (typeof imgDiv !== 'undefined') {
+		    var img = imgDiv.getElementsByTagName('img')[0];
 
-	    console.log(parseFloat(window.getComputedStyle(headerPagesList[i],null).width) * 1.5);
-	    imgDiv.style.height = parseFloat(window.getComputedStyle(headerPagesList[i],null).width) * 1.5 + "px";
-	    console.log(parseFloat(window.getComputedStyle(img,null).width) / -2.0);
-	    img.style.marginLeft = parseFloat(window.getComputedStyle(img,null).width) / -2.0 + "px";
+		    imgDiv.style.height = parseFloat(window.getComputedStyle(headerPagesList[i],null).width) * 1.5 + "px";
+		    img.style.marginLeft = parseFloat(window.getComputedStyle(img,null).width) / -2.0 + "px";
+		} else if (typeof spanNoIMG !== 'undefined') {
+			var nHeight = parseFloat(window.getComputedStyle(headerPagesList[i],null).width) * 1.5;
+			var padTop = (nHeight / 375.0 * 100)
+			spanNoIMG.style.paddingTop = padTop +  "px";
+			console.log((nHeight - padTop) + "px");
+			spanNoIMG.style.height = (nHeight - padTop) + "px";
+
+		}
 	}
 }
 
 var anchorScroll = (event) => {
-	console.log("TagName: ", event.currentTarget.tagName.toLowerCase());
 	if (event.currentTarget.tagName.toLowerCase() === 'a') {
 	    event.preventDefault();
 
@@ -31,7 +36,6 @@ var anchorScroll = (event) => {
 };
 
 for (var i = 0;i < l;i++) {
-	console.log(headerPagesList[i]);
 	headerPagesList[i].addEventListener('click', anchorScroll, false);
 }
 
@@ -93,4 +97,6 @@ window.onresize = function() {
 	resizeID = setTimeout(stopResize, 500);
 };
 
-HurDevCFunc();
+window.onload = function() {
+  HurDevCFunc();
+};
