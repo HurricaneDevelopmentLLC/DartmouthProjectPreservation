@@ -191,7 +191,7 @@ XMLManager.ImportXML().then((jsonData) => {
 			for (var child in obj) {
 				if (typeof obj[child] === 'object') {
 					
-					if (child === 'subpages' && /yurburg-section-[b]-row-[\d]*/.test(obj.sectionMasterPageName)) {
+					if (child === 'subpages' && /yurburg-adjacent-cemetery*/.test(obj.sectionMasterPageName)) {
 						//console.log(obj.sectionMasterPageName);
 
 						var newName = "";
